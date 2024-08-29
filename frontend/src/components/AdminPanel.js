@@ -1,104 +1,84 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Table, Button, Container, Row, Col, Form } from 'react-bootstrap';
-import { jsPDF } from 'jspdf';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const AdminPanel = () => {
-    const [entries, setEntries] = useState([]);
-    const [sortBy, setSortBy] = useState('name');
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const fetchEntries = useCallback(async () => {
-        try {
-            const response = await axios.get('/api/entries', { params: { sortBy } });
-            setEntries(response.data);
-        } catch (error) {
-            console.error('Error fetching entries:', error);
-        }
-    }, [sortBy]);
+const FacultyPanel = () => {
+    const [appraisals, setAppraisals] = useState([]);
 
     useEffect(() => {
-        fetchEntries();
-    }, [fetchEntries]); // Dependency array includes fetchEntries
+        // Fetch faculty appraisal data from the server
+        axios.get('/api/faculty-appraisals')
+            .then(response => {
+                setAppraisals(response.data);
+            })
+            .catch(error => {
+                console.error('Error fetching faculty appraisals:', error);
+            });
+    }, []);
 
-    const handleSortChange = (event) => {
-        setSortBy(event.target.value);
+    const handleDownload = () => {
+        // Implement functionality to download data in PDF format
+        axios.get('/api/download-appraisals', { responseType: 'blob' })
+            .then(response => {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'faculty_appraisals.pdf');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            })
+            .catch(error => {
+                console.error('Error downloading appraisals:', error);
+            });
     };
-
-    const handleSearchChange = (event) => {
-        setSearchTerm(event.target.value.toLowerCase());
-    };
-
-    const handleDownloadPDF = () => {
-        const doc = new jsPDF();
-        doc.text('Faculty Self-Appraisal Entries', 10, 10);
-        entries.forEach((entry, index) => {
-            doc.text(`${index + 1}. Name: ${entry.name}, Employee Code: ${entry.code}, Date: ${entry.date}`, 10, 20 + (index * 10));
-        });
-        doc.save('faculty_entries.pdf');
-    };
-
-    const filteredEntries = entries.filter(entry => 
-        entry.name.toLowerCase().includes(searchTerm) ||
-        entry.code.toLowerCase().includes(searchTerm)
-    );
 
     return (
-        <Container className="my-4">
-            <Row className="mb-4">
-                <Col>
-                    <h1 className="text-center mb-4">Admin Dashboard</h1>
-                </Col>
-            </Row>
-            <Row className="mb-3">
-                <Col md={8}>
-                    <Form.Control
-                        type="text"
-                        placeholder="Search by name or employee code"
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                    />
-                </Col>
-                <Col md={4} className="d-flex justify-content-end">
-                    <Button variant="primary" onClick={handleDownloadPDF}>
-                        Download PDF
-                    </Button>
-                </Col>
-            </Row>
-            <Row className="mb-3">
-                <Col md={12}>
-                    <Form.Select value={sortBy} onChange={handleSortChange}>
-                        <option value="name">Sort by Name</option>
-                        <option value="code">Sort by Employee Code</option>
-                        <option value="date">Sort by Date</option>
-                    </Form.Select>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <Table striped bordered hover>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Employee Code</th>
-                                <th>Date of Submission</th>
+        <div className="container my-4">
+            <h1 className="mb-4">Faculty Dashboard</h1>
+            <button onClick={handleDownload} className="btn btn-primary mb-4">Download Appraisals</button>
+            <div className="table-responsive">
+                <table className="table table-striped table-bordered">
+                    <thead className="thead-dark">
+                        <tr>
+                            <th>S no.</th>
+                            <th>Date</th>
+                            <th>Faculty Name</th>
+                            <th>Research Publications</th>
+                            <th>Event Participation</th>
+                            <th>Seminars</th>
+                            <th>Projects</th>
+                            <th>Lectures</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {appraisals.map((appraisal, index) => (
+                            <tr key={index}>
+                                <td>1</td>
+                                <td>27-05-2023</td>
+                                <td>{appraisal.facultyName}</td>
+                                <td>{appraisal.researchPublications}</td>
+                                <td>{appraisal.eventParticipation}</td>
+                                <td>{appraisal.seminars}</td>
+                                <td>{appraisal.projects}</td>
+                                <td>{appraisal.lectures}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {filteredEntries.map((entry, index) => (
-                                <tr key={index}>
-                                    <td>{entry.name}</td>
-                                    <td>{entry.code}</td>
-                                    <td>{entry.date}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </Col>
-            </Row>
-        </Container>
+                        ))}
+                        <tr>
+                                <td>2</td>
+                                <td>22-07-2024</td>
+                                <td>Nikhil Kumar</td>
+                                <td>Nothing</td>
+                                <td>BGMI</td>
+                                <td>WORKSHOP</td>
+                                <td>Hacked ids on social media</td>
+                                <td>On GYM<td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 };
 
-export default AdminPanel;
+export default FacultyPanel;
